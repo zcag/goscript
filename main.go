@@ -13,21 +13,15 @@ type Resolved struct {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: goscript <script.go> [args...]")
-		os.Exit(2)
-	}
+	config := ParseArgs(os.Args)
 
-	script := os.Args[1]
-	args := os.Args[2:]
-
-	content, err := read(script)
+	content, err := read(config.ScriptPath)
 	if err != nil { fatal(err) }
 
 	resolved, err := resolve(content)
 	if err != nil { fatal(err) }
 
-	RunAndExit(resolved.Binary, args)
+	RunAndExit(resolved.Binary, config.Args)
 }
 
 func fatal(err error) {

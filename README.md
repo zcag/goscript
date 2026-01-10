@@ -81,3 +81,4 @@ Cache key is currently based on the raw script contents.
 * cache clean command
 * include `go version` / `GOOS` / `GOARCH` in cache key
 * faster exec (`syscall.Exec`)
+    * support/test passing stdout to ./myscript.go
