@@ -6,6 +6,12 @@ import (
 	"path/filepath"
 )
 
+type Resolved struct {
+	Key    CacheKey
+	Binary string
+	WorkDir string
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: goscript <script.go> [args...]")
@@ -15,33 +21,39 @@ func main() {
 	script := os.Args[1]
 	args := os.Args[2:]
 
-	abs, err := filepath.Abs(script)
-	if err != nil {
-		fatal(err)
-	}
+	content, err := read(script)
+	if err != nil { fatal(err) }
 
-	raw, err := os.ReadFile(abs)
-	if err != nil {
-		fatal(err)
-	}
+	resolved, err := resolve(content)
+	if err != nil { fatal(err) }
 
-	key := HashContent(raw)
-
-	if r, ok, err := LookupCache(key); err != nil {
-		fatal(err)
-	} else if ok {
-		RunAndExit(r.Binary, args)
-	}
-
-	r, err := PrepareScript(key, raw)
-	if err != nil {
-		fatal(err)
-	}
-
-	RunAndExit(r.Binary, args)
+	RunAndExit(resolved.Binary, args)
 }
 
 func fatal(err error) {
 	fmt.Fprintln(os.Stderr, "goscript:", err)
 	os.Exit(1)
+}
+
+func read(script string) ([]byte, error) {
+	abs, err := filepath.Abs(script)
+	if err != nil { return nil, err }
+
+	raw, err := os.ReadFile(abs)
+	if err != nil { return nil, err }
+
+	return raw, nil
+}
+
+func resolve(raw []byte) (*Resolved, error) {
+	key := HashContent(raw)
+
+	r, hit, err := LookupCache(key);
+	if err != nil { return nil, err }
+	if hit { return r, nil }
+
+	r, err = PrepareScript(key, raw)
+	if err != nil { return nil, err }
+
+	return r, nil
 }

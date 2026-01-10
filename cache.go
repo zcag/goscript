@@ -7,12 +7,6 @@ import (
 
 type CacheKey string
 
-type Resolved struct {
-	Key    CacheKey
-	Binary string
-	WorkDir string
-}
-
 func LookupCache(key CacheKey) (*Resolved, bool, error) {
 	bin := cacheBinPath(key)
 	if _, err := os.Stat(bin); err == nil {
