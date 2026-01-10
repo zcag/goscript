@@ -13,15 +13,24 @@ type Resolved struct {
 }
 
 func main() {
-	config := ParseArgs(os.Args)
+	cfg := ParseArgs(os.Args)
 
-	content, err := read(config.ScriptPath)
+	var content []byte
+	var err error
+
+	content, err = read(cfg)
 	if err != nil { fatal(err) }
 
 	resolved, err := resolve(content)
 	if err != nil { fatal(err) }
 
-	RunAndExit(resolved.Binary, config.Args)
+	if (cfg.Action == ActionBuild) {
+		panic("build output not implemented")
+	} else if (cfg.Action == ActionMigrate) {
+		panic("migration implemented")
+	}
+
+	RunAndExit(resolved.Binary, cfg.Args)
 }
 
 func fatal(err error) {
@@ -29,8 +38,12 @@ func fatal(err error) {
 	os.Exit(1)
 }
 
-func read(script string) ([]byte, error) {
-	abs, err := filepath.Abs(script)
+func read(cfg Config) ([]byte, error) {
+	if (cfg.Input == InputInline) {
+		panic("inline input not implemented")
+	}
+
+	abs, err := filepath.Abs(cfg.ScriptPath)
 	if err != nil { return nil, err }
 
 	raw, err := os.ReadFile(abs)
