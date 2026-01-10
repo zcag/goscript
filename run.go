@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"bytes"
+	"io"
+	"strings"
 )
 
 func RunAndExit(bin string, args []string) {
@@ -20,4 +23,18 @@ func RunAndExit(bin string, args []string) {
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func RunQuiet(bin string, args []string, dir string) error {
+	cmd := exec.Command(bin, args...)
+	cmd.Dir = dir
+
+	var stderr bytes.Buffer
+	cmd.Stdout = io.Discard
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%w: %s", err, strings.TrimSpace(stderr.String()))
+	}
+	return nil
 }
