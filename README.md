@@ -80,9 +80,9 @@ Cache key is currently based on the raw script contents.
 ---
 
 ## TODO
-* Dependenct handling, so you can also include external dependencies
 * include `go version` / `GOOS` / `GOARCH` in cache key
 * support `goscript -c "fmt.Println('yeye')"`
+* support `goscript --build .local/bin/myscript myscript.go`
 * faster exec (`syscall.Exec`)
 
 

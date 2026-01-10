@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func HashContent(b []byte) CacheKey {
@@ -21,9 +22,31 @@ func PrepareScript(key CacheKey, raw []byte) (*Resolved, error) {
 		return nil, err
 	}
 
+	// main.go
 	goPath := filepath.Join(workDir, "main.go")
 	if err := os.WriteFile(goPath, goSrc, 0o644); err != nil {
 		return nil, err
+	}
+
+	// go.mod (new)
+	modPath := filepath.Join(workDir, "go.mod")
+	if _, err := os.Stat(modPath); os.IsNotExist(err) {
+		mod := []byte(
+			"module goscript/" + string(key) + "\n\n" +
+			"go " + goVersionLine() + "\n",
+		)
+		if err := os.WriteFile(modPath, mod, 0o644); err != nil {
+			return nil, err
+		}
+
+		// resolve deps once
+		cmd := exec.Command("go", "mod", "tidy")
+		cmd.Dir = workDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
 	}
 
 	bin := cacheBinPath(key)
@@ -38,16 +61,20 @@ func PrepareScript(key CacheKey, raw []byte) (*Resolved, error) {
 		return nil, err
 	}
 
-	tmp := bin + ".tmp"
-	cmd := exec.Command("go", "build", "-trimpath", "-o", tmp, goPath)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if err := RunQuiet("go", []string{"mod", "tidy"}, workDir); err != nil {
+		return nil, err
+	}
 
-	if err := cmd.Run(); err != nil {
+	tmp := bin + ".tmp"
+	if err := RunQuiet(
+		"go",
+		[]string{"build", "-trimpath", "-o", tmp, goPath},
+		workDir,
+	); err != nil {
 		_ = os.Remove(tmp)
 		return nil, err
 	}
+
 	if err := os.Rename(tmp, bin); err != nil {
 		_ = os.Remove(tmp)
 		return nil, err
@@ -66,4 +93,15 @@ func StripShebang(b []byte) []byte {
 		return nil
 	}
 	return b
+}
+
+func goVersionLine() string {
+	out, _ := exec.Command("go", "env", "GOVERSION").Output()
+	// "go1.22.1" → "1.22"
+	v := strings.TrimPrefix(strings.TrimSpace(string(out)), "go")
+	parts := strings.Split(v, ".")
+	if len(parts) >= 2 {
+		return parts[0] + "." + parts[1]
+	}
+	return v
 }
