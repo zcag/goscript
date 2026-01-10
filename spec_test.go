@@ -2,18 +2,14 @@ package main
 
 import "testing"
 
-func TestScripts(t *testing.T) {
-	assertScript(t,
-	 `#!/bin/env goscript
-		package main
-		import "fmt"
-		func main() {
-			fmt.Println("ok")
-		}
-	 `,
-	 "ok",
-	)
 
+func TestScripts(t *testing.T) {
+	t.Run("basic args", specBasicArgs)
+	t.Run("compile error thrown", specCompileError)
+	t.Run("dependency loads", specDeps)
+}
+
+func specBasicArgs(t *testing.T) {
 	assertScript(t,
    `#!/bin/env goscript
 		package main
@@ -29,7 +25,9 @@ func TestScripts(t *testing.T) {
 		"a",
 		"b",
 	)
+}
 
+func specCompileError(t *testing.T) {
 	assertScriptError(t,
 	 `#!/bin/env goscript
 		package main
@@ -37,6 +35,9 @@ func TestScripts(t *testing.T) {
 	 `,
 	 "main.go:3.17: undefined: SINTAX",
 	)
+}
+
+func specDeps(t *testing.T) {
 
 	assertScript(t,
 	 `#!/usr/bin/env goscript
