@@ -11,7 +11,8 @@ func TestScripts(t *testing.T) {
 			fmt.Println("ok")
 		}
 	 `,
-	 "ok")
+	 "ok",
+	)
 
 	assertScript(t,
    `#!/bin/env goscript
@@ -24,12 +25,16 @@ func TestScripts(t *testing.T) {
 			fmt.Println(os.Args[1:])
 		}
 		`,
-		"[a b]", "a", "b")
+		`^\[a b\]\n$`,
+		"a",
+		"b",
+	)
 
 	assertScriptError(t,
 	 `#!/bin/env goscript
 		package main
 		func main() { SINTAX }
 	 `,
-	 "main.go:3.17: undefined: SINTAX")
+	 "main.go:3.17: undefined: SINTAX",
+	)
 }
