@@ -2,7 +2,6 @@ package main
 
 import "testing"
 
-
 func TestScripts(t *testing.T) {
 	t.Run("basic args", specBasicArgs)
 	t.Run("compile error thrown", specCompileError)
@@ -10,7 +9,7 @@ func TestScripts(t *testing.T) {
 }
 
 func specBasicArgs(t *testing.T) {
-	assertScript(t,
+	var scr = prepScript(t,
    `#!/bin/env goscript
 		package main
 		import (
@@ -19,27 +18,22 @@ func specBasicArgs(t *testing.T) {
 		)
 		func main() {
 			fmt.Println(os.Args[1:])
-		}
-		`,
-		`^\[a b\]\n$`,
-		"a",
-		"b",
-	)
+		}`)
+
+	assertCmdArgs(t, scr, []string{"a", "b"}, `^\[a b\]\n$`)
 }
 
 func specCompileError(t *testing.T) {
-	assertScriptError(t,
+	var scr = prepScript(t,
 	 `#!/bin/env goscript
 		package main
-		func main() { SINTAX }
-	 `,
-	 "main.go:3.17: undefined: SINTAX",
-	)
+		func main() { SINTAX }`)
+
+	assertCmdError(t, scr, "main.go:3.17: undefined: SINTAX")
 }
 
 func specDeps(t *testing.T) {
-
-	assertScript(t,
+	var scr = prepScript(t,
 	 `#!/usr/bin/env goscript
 		package main
 
@@ -51,8 +45,7 @@ func specDeps(t *testing.T) {
 		func main() {
 			err := errors.New("boomalaka")
 			fmt.Println(err.Error())
-		}
-		`,
-		"boomalaka",
-	)
+		}`)
+
+	assertCmd(t, scr, "boomalaka")
 }

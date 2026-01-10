@@ -30,21 +30,24 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// Creates a tmp executable from given multiline string, asserts no error and stdout matches want (regex)
-func assertScript(t *testing.T, src, want string, args ...string) {
+func assertCmd(t *testing.T, script string, want string) {
 	t.Helper()
-	assertSpec(t, src, want, false, args...)
+	_assertCmd(t, script, []string{}, want, false)
 }
 
-func assertScriptError(t *testing.T, src, want string) {
+func assertCmdArgs(t *testing.T, script string, args []string, want string) {
 	t.Helper()
-	assertSpec(t, src, want, true)
+	_assertCmd(t, script, args, want, false)
 }
 
-func assertSpec(t *testing.T, src, want string, wantErr bool, args ...string) {
+func assertCmdError(t *testing.T, script string, want string) {
+	t.Helper()
+	_assertCmd(t, script, []string{}, want, true)
+}
+
+func _assertCmd(t *testing.T, script string, args []string, want string, wantErr bool) {
 	t.Helper()
 
-	script := writeSpec(t, src)
 	out, err := exec.Command(script, args...).CombinedOutput()
 
 	if wantErr != (err != nil) {
@@ -57,7 +60,7 @@ func assertSpec(t *testing.T, src, want string, wantErr bool, args ...string) {
 	}
 }
 
-func writeSpec(t *testing.T, src string) string {
+func prepScript(t *testing.T, src string) string {
 	t.Helper()
 
 	script := filepath.Join(t.TempDir(), "spec")
