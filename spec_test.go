@@ -1,0 +1,35 @@
+package main
+
+import "testing"
+
+func TestScripts(t *testing.T) {
+	assertScript(t,
+	 `#!/bin/env goscript
+		package main
+		import "fmt"
+		func main() {
+			fmt.Println("ok")
+		}
+	 `,
+	 "ok")
+
+	assertScript(t,
+   `#!/bin/env goscript
+		package main
+		import (
+			"fmt"
+			"os"
+		)
+		func main() {
+			fmt.Println(os.Args[1:])
+		}
+		`,
+		"[a b]", "a", "b")
+
+	assertScriptError(t,
+	 `#!/bin/env goscript
+		package main
+		func main() { SINTAX }
+	 `,
+	 "main.go:3.17: undefined: SINTAX")
+}
