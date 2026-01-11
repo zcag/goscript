@@ -32,7 +32,7 @@ type Config struct {
 
 type cliArgs struct {
 	Code string `short:"c" help:"Inline Go code."`
-	Out  string `short:"o" help:"Build output path. Not Implemented."`
+	Out  string `short:"o" help:"Build output path."`
 	Mig  string `short:"m" help:"Migrate target dir. Not Implemented."`
 
 	Script string   `arg:"" optional:"" help:"Go script path (default run)."`

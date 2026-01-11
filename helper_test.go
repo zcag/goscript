@@ -62,12 +62,19 @@ func _assertCmd(t *testing.T, script string, args []string, want string, wantErr
 	out, err := exec.Command(script, args...).CombinedOutput()
 
 	if wantErr != (err != nil) {
-		t.Fatalf("wantErr=%v gotErr=%v out=%s", wantErr, err != nil, out)
+		t.Fatalf(
+			"wantErr=%v gotErr=%v out=%s\ncommand: %s %v",
+			wantErr,
+			err != nil,
+			out,
+			script,
+			args,
+		)
 	}
 
 	got := string(out)
 	if !regexp.MustCompile(want).MatchString(got) {
-		t.Fatalf("got %q want /%s/", got, want)
+		t.Fatalf("got %q want /%s/\ncommand: %s %v", got, want, script, args)
 	}
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"io"
 	"path/filepath"
 )
 
@@ -25,12 +26,17 @@ func main() {
 	if err != nil { fatal(err) }
 
 	if (cfg.Action == ActionBuild) {
-		panic("build output not implemented")
+		err = copyBinary(resolved.Binary, cfg.OutputPath);
+		if err != nil { fatal(err) }
+		fmt.Printf("Compiled into %s\n", cfg.OutputPath)
 	} else if (cfg.Action == ActionMigrate) {
 		panic("migration not implemented")
+	} else if (cfg.Action == ActionRun) {
+		RunAndExit(resolved.Binary, cfg.Args)
+	} else {
+		panic("No action. Shouldn't be possible to reach this state")
 	}
 
-	RunAndExit(resolved.Binary, cfg.Args)
 }
 
 func fatal(err error) {
@@ -61,4 +67,14 @@ func resolve(raw []byte) (*Resolved, error) {
 	if err != nil { return nil, err }
 
 	return r, nil
+}
+
+func copyBinary(src string, dst string) error {
+		var perms = os.O_CREATE|os.O_WRONLY|os.O_TRUNC
+
+		in, err := os.Open(src); if err != nil { return err }
+		out, err := os.OpenFile( dst, perms, 0o755); if err != nil { return err }
+		_, err = io.Copy(out, in); if err != nil { return err }
+
+		return nil
 }

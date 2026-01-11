@@ -30,6 +30,12 @@ chmod +x myscript
 ./myscript a b c
 ```
 
+You can create a binary from this singular goscript
+```bash
+goscript -o mybin myscript
+./mybin a b c
+```
+
 ### Inline Example
 
 You can also run goscript directly with `goscript -c` to run go from the param directly.
@@ -39,8 +45,15 @@ This feature also benefits from cached binaries, so it actually runs compiled bi
 
 ```bash
 goscript -c 'fmt.Println("yeye")'
-goscript -c 'fmt.Println("yeye")'
 ````
+
+This can be combined with `-o` to compile a binary from your inline go command.
+Not sure why you would do this, but it's possible.
+
+```bash
+goscript -o mybin -c 'fmt.Println("why")'
+./mybin
+```
 
 ## Installation
 
@@ -90,9 +103,6 @@ Cache key is currently based on the raw script contents.
 * add some helper methods to inline, to ease common pipe/arg handling and printing
 * supoort auto importing non standart libraries
     * maybe have a big map of common libs
-* support `goscript --build .local/bin/mybin myscript.go`
-* `goscript --migrate myscript.go myproj/` to convert script to proper go project
-* cache clean command
-* include `go version` / `GOOS` / `GOARCH` in cache key
 * faster exec (`syscall.Exec`)
     * support/test passing stdout to ./myscript.go
+* `goscript --migrate myscript.go myproj/` to convert script to proper go project

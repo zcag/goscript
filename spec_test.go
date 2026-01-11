@@ -9,7 +9,7 @@ func TestScripts(t *testing.T) {
 	t.Run("auto imports missing libs", specImports)
 	t.Run("inline runs", specInline)
 	t.Run("outputs binary", specOutput)
-	t.Run("migrates script to dir", specOutput)
+	t.Run("migrates script to dir", specMigrate)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -74,10 +74,13 @@ func specOutput(t *testing.T) {
 		import "fmt"
 		func main() { fmt.Println("output-ok") }`)
 
-	assertCmdErrorArgs(t, goscriptPath, []string{scr, "-o", testOutBinPath}, "not implemented")
-
-	// assertCmdArgs(t, goscriptPath, []string{scr, "-o", testOutBinPath}, "Compiled into")
-	// assertCmd(t, testOutBinPath, "output-ok")
+	assertCmdArgs(
+		t,
+		goscriptPath,
+		[]string{scr, "-o", testOutBinPath},
+		"Compiled into",
+	)
+	assertCmd(t, testOutBinPath, "output-ok")
 }
 
 func specMigrate(t *testing.T) {
