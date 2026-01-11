@@ -16,7 +16,7 @@ package main
 import (
 	"fmt" // You don't have to define stdlibs
 	"os"
-    "github.com/pkg/errors" // You have to expliciyly import ext libs
+    "github.com/pkg/errors" // These deps are automatically installed
 )
 
 func main() {
