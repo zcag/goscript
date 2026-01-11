@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"golang.org/x/tools/imports"
 )
 
 func HashContent(b []byte) CacheKey {
@@ -28,6 +29,10 @@ func PrepareScript(key CacheKey, raw []byte) (*Resolved, error) {
 		"go " + goVersionLine() + "\n",
 	)
 	err = os.WriteFile(modPath, mod, 0o644)
+	if err != nil { return nil, err }
+
+	// Auto-import
+	goSrc, err = imports.Process("main.go", goSrc, nil)
 	if err != nil { return nil, err }
 
 	// main.go

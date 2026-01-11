@@ -3,10 +3,7 @@ package main
 import (
 	"bytes"
 	_ "embed"
-	"fmt"
 	"strings"
-
-	"golang.org/x/tools/imports"
 )
 
 const inlineMarker = "// {{INLINE_BODY}}"
@@ -24,13 +21,6 @@ func InlineToScript(code string) ([]byte, error) {
 		1,
 	)
 
-	out, err := HandleImports(out)
-	return out, err
-}
-
-func HandleImports(src []byte) ([]byte, error) {
-	out, err := imports.Process("main.go", src, nil)
-	if err != nil { return nil, fmt.Errorf("goimports: %w", err) }
 	return out, nil
 }
 

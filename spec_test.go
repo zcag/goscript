@@ -6,6 +6,7 @@ func TestScripts(t *testing.T) {
 	t.Run("basic args", specBasicArgs)
 	t.Run("compile error thrown", specCompileError)
 	t.Run("dependency loads", specDeps)
+	t.Run("auto imports missing libs", specImports)
 	t.Run("inline runs", specInline)
 	t.Run("outputs binary", specOutput)
 	t.Run("migrates script to dir", specOutput)
@@ -51,6 +52,15 @@ func specDeps(t *testing.T) {
 		}`)
 
 	assertCmd(t, scr, "boomalaka")
+}
+
+func specImports(t *testing.T) {
+	var scr = prepScript(t,
+	 `#!/usr/bin/env goscript
+		package main
+		func main() { fmt.Println("auto-import works") }`)
+
+	assertCmd(t, scr, "auto-import works")
 }
 
 func specInline(t *testing.T) {

@@ -14,9 +14,9 @@ You write a single executable file with a shebang, and run it like a script.
 package main
 
 import (
-	"fmt"
+	"fmt" // You don't have to define stdlibs
 	"os"
-    "github.com/pkg/errors"
+    "github.com/pkg/errors" // You have to expliciyly import ext libs
 )
 
 func main() {
@@ -56,6 +56,7 @@ Make sure $GOPATH/bin (or $HOME/go/bin) is in your PATH.
 3. Cache is checked under `~/.cache/goscript`
 4. On cache miss:
    * shebang line is stripped
+   * any missing imports are added to the script
    * script is written as `main.go` into a cache work directory
    * go.mod is generated with all external dependencies
    * Dependencies are installed
