@@ -54,8 +54,7 @@ func specDeps(t *testing.T) {
 }
 
 func specInline(t *testing.T) {
-	assertCmdErrorArgs(t, goscriptPath, []string{"-c", `fmt.Println("inline-ok")`}, "not implemented")
-	// assertCmdArgs(t, goscriptPath, []string{"-c", `fmt.Println("inline-ok")`}, "inline-ok")
+	assertCmdArgs(t, goscriptPath, []string{"-c", `fmt.Println("inline-ok")`}, "inline-ok")
 }
 
 func specOutput(t *testing.T) {

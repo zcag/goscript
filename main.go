@@ -39,9 +39,7 @@ func fatal(err error) {
 }
 
 func read(cfg Config) ([]byte, error) {
-	if (cfg.Input == InputInline) {
-		panic("inline input not implemented")
-	}
+	if (cfg.Input == InputInline) { return InlineToScript(cfg.InlineCode) }
 
 	abs, err := filepath.Abs(cfg.ScriptPath)
 	if err != nil { return nil, err }

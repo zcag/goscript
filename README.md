@@ -7,7 +7,7 @@ You write a single executable file with a shebang, and run it like a script.
 
 ## Usage
 
-### Example
+### Shebang Example
 
 ```go
 #!/usr/bin/env goscript
@@ -29,6 +29,18 @@ func main() {
 chmod +x myscript
 ./myscript a b c
 ```
+
+### Inline Example
+
+You can also run goscript directly with `goscript -c` to run go from the param directly.
+It automagically handles packages/imports for you.
+
+This feature also benefits from cached binaries, so it actually runs compiled binaries after running it at least once
+
+```bash
+goscript -c 'fmt.Println("yeye")'
+goscript -c 'fmt.Println("yeye")'
+````
 
 ## Installation
 
@@ -74,7 +86,9 @@ This is real Go code — no DSL, no auto-wrapping.
 Cache key is currently based on the raw script contents.
 
 ## TODO
-* support `goscript -c "fmt.Println('yeye')"`, `goimports` might be useful here.
+* add some helper methods to inline, to ease common pipe/arg handling and printing
+* supoort auto importing non standart libraries
+    * maybe have a big map of common libs
 * support `goscript --build .local/bin/mybin myscript.go`
 * `goscript --migrate myscript.go myproj/` to convert script to proper go project
 * cache clean command

@@ -1,0 +1,26 @@
+// vim: ft=go
+
+// script_template.go
+// This file is used as a template for inline scripts.
+
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+// ---- helpers ----
+
+func die(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+// ---- end helpers ----
+
+func main() {
+	// {{INLINE_BODY}}
+}
