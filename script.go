@@ -18,9 +18,17 @@ func PrepareScript(key CacheKey, raw []byte) (*Resolved, error) {
 	goSrc := StripShebang(raw)
 
 	workDir := cacheWorkDir(key)
-	if err := os.MkdirAll(workDir, 0o755); err != nil {
-		return nil, err
-	}
+	err := os.MkdirAll(workDir, 0o755)
+	if err != nil { return nil, err }
+
+	// go.mod
+	modPath := filepath.Join(workDir, "go.mod")
+	mod := []byte(
+		"module goscript/" + string(key) + "\n\n" +
+		"go " + goVersionLine() + "\n",
+	)
+	err = os.WriteFile(modPath, mod, 0o644)
+	if err != nil { return nil, err }
 
 	// main.go
 	goPath := filepath.Join(workDir, "main.go")
@@ -28,57 +36,23 @@ func PrepareScript(key CacheKey, raw []byte) (*Resolved, error) {
 		return nil, err
 	}
 
-	// go.mod (new)
-	modPath := filepath.Join(workDir, "go.mod")
-	if _, err := os.Stat(modPath); os.IsNotExist(err) {
-		mod := []byte(
-			"module goscript/" + string(key) + "\n\n" +
-			"go " + goVersionLine() + "\n",
-		)
-		if err := os.WriteFile(modPath, mod, 0o644); err != nil {
-			return nil, err
-		}
-
-		// resolve deps once
-		cmd := exec.Command("go", "mod", "tidy")
-		cmd.Dir = workDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return nil, err
-		}
-	}
-
 	bin := cacheBinPath(key)
-	if err := os.MkdirAll(filepath.Dir(bin), 0o755); err != nil {
-		return nil, err
-	}
+	err = os.MkdirAll(filepath.Dir(bin), 0o755)
+	if err != nil { return nil, err }
 
-	// If already built, reuse.
-	if _, err := os.Stat(bin); err == nil {
-		return &Resolved{Key: key, Binary: bin, WorkDir: workDir}, nil
-	} else if err != nil && !os.IsNotExist(err) {
-		return nil, err
-	}
-
-	if err := RunQuiet("go", []string{"mod", "tidy"}, workDir); err != nil {
-		return nil, err
-	}
+	err = RunQuiet("go", []string{"mod", "tidy"}, workDir);
+	if err != nil { return nil, err }
 
 	tmp := bin + ".tmp"
-	if err := RunQuiet(
+	err = RunQuiet(
 		"go",
 		[]string{"build", "-trimpath", "-o", tmp, goPath},
 		workDir,
-	); err != nil {
-		_ = os.Remove(tmp)
-		return nil, err
-	}
+	);
+	if err != nil { os.Remove(tmp); return nil, err }
 
-	if err := os.Rename(tmp, bin); err != nil {
-		_ = os.Remove(tmp)
-		return nil, err
-	}
+	err = os.Rename(tmp, bin);
+	if err != nil { os.Remove(tmp); return nil, err }
 
 	return &Resolved{Key: key, Binary: bin, WorkDir: workDir}, nil
 }
