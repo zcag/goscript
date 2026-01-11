@@ -27,7 +27,7 @@ func main() {
 	if (cfg.Action == ActionBuild) {
 		panic("build output not implemented")
 	} else if (cfg.Action == ActionMigrate) {
-		panic("migration implemented")
+		panic("migration not implemented")
 	}
 
 	RunAndExit(resolved.Binary, cfg.Args)

@@ -10,6 +10,9 @@ import (
 
 var goscriptPath string
 
+var testOutBinPath string
+var testMigrateDir string
+
 func TestMain(m *testing.M) {
 	tmp, err := os.MkdirTemp("", "goscript-test-")
 	if err != nil {
@@ -18,6 +21,9 @@ func TestMain(m *testing.M) {
 	defer os.RemoveAll(tmp)
 
 	goscriptPath = filepath.Join(tmp, "goscript")
+
+	testOutBinPath = filepath.Join(tmp, "compiled")
+	testMigrateDir = filepath.Join(tmp, "migrated")
 
 	// Build bin
 	if out, err := exec.Command("go", "build", "-o", goscriptPath, ".").CombinedOutput(); err != nil {
@@ -43,6 +49,11 @@ func assertCmdArgs(t *testing.T, script string, args []string, want string) {
 func assertCmdError(t *testing.T, script string, want string) {
 	t.Helper()
 	_assertCmd(t, script, []string{}, want, true)
+}
+
+func assertCmdErrorArgs(t *testing.T, script string, args []string, want string) {
+	t.Helper()
+	_assertCmd(t, script, args, want, true)
 }
 
 func _assertCmd(t *testing.T, script string, args []string, want string, wantErr bool) {

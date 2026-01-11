@@ -74,8 +74,7 @@ This is real Go code — no DSL, no auto-wrapping.
 Cache key is currently based on the raw script contents.
 
 ## TODO
-* find some solution to lsp and syntax highlighters freaking out from shebang
-* support `goscript -c "fmt.Println('yeye')"`
+* support `goscript -c "fmt.Println('yeye')"`, `goimports` might be useful here.
 * support `goscript --build .local/bin/mybin myscript.go`
 * `goscript --migrate myscript.go myproj/` to convert script to proper go project
 * cache clean command
