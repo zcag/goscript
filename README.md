@@ -43,7 +43,7 @@ Make sure $GOPATH/bin (or $HOME/go/bin) is in your PATH.
 2. `goscript` reads the script file and hashes its raw contents
 3. Cache is checked under `~/.cache/goscript`
 4. On cache miss:
-   * shebang line is stripped (line count preserved)
+   * shebang line is stripped
    * script is written as `main.go` into a cache work directory
    * go.mod is generated with all external dependencies
    * Dependencies are installed

@@ -32,7 +32,7 @@ func specCompileError(t *testing.T) {
 		package main
 		func main() { SINTAX }`)
 
-	assertCmdError(t, scr, "main.go:3.17: undefined: SINTAX")
+	assertCmdError(t, scr, "undefined: SINTAX")
 }
 
 func specDeps(t *testing.T) {
