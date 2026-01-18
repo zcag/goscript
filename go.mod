@@ -1,4 +1,4 @@
-module zcag/goscript
+module github.com/zcag/goscript
 
 go 1.25.5
 
