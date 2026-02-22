@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"os/exec"
+	"strings"
+	"testing"
+)
 
 func TestScripts(t *testing.T) {
 	t.Run("basic args", specBasicArgs)
@@ -18,6 +22,7 @@ func TestScripts(t *testing.T) {
 	t.Run("auto-print: batch expr", specAutoPrintBatch)
 	t.Run("auto-print: simple inline", specAutoPrintSimple)
 	t.Run("auto-print: skips explicit print", specAutoPrintSkipsExplicit)
+	t.Run("--explain prints source", specExplain)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -121,6 +126,22 @@ func specBatchModeLines(t *testing.T) {
 		"a\nb\nc\n",
 		`^3\n$`,
 	)
+}
+
+func specExplain(t *testing.T) {
+	cmd := exec.Command(goscriptPath, "--explain", "-c", `strings.ToUpper(x)`)
+	cmd.Stdin = strings.NewReader("")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("explain failed: %v\n%s", err, out)
+	}
+	src := string(out)
+	if !strings.Contains(src, "package main") {
+		t.Fatalf("explain output missing 'package main':\n%s", src)
+	}
+	if !strings.Contains(src, "strings.ToUpper(x)") {
+		t.Fatalf("explain output missing user code:\n%s", src)
+	}
 }
 
 func specAutoPrintPipe(t *testing.T) {
