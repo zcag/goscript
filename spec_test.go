@@ -14,6 +14,10 @@ func TestScripts(t *testing.T) {
 	t.Run("pipe mode: i index var", specPipeModeIdx)
 	t.Run("pipe mode: f fields var", specPipeModeFields)
 	t.Run("batch mode: lines var", specBatchModeLines)
+	t.Run("auto-print: pipe expr", specAutoPrintPipe)
+	t.Run("auto-print: batch expr", specAutoPrintBatch)
+	t.Run("auto-print: simple inline", specAutoPrintSimple)
+	t.Run("auto-print: skips explicit print", specAutoPrintSkipsExplicit)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -116,6 +120,38 @@ func specBatchModeLines(t *testing.T) {
 		[]string{"-c", `fmt.Println(len(lines))`},
 		"a\nb\nc\n",
 		`^3\n$`,
+	)
+}
+
+func specAutoPrintPipe(t *testing.T) {
+	// No fmt.Println — auto-print should kick in.
+	assertCmdStdin(t,
+		[]string{"-c", `strings.ToUpper(x)`},
+		"hello\nworld\n",
+		`HELLO\nWORLD`,
+	)
+}
+
+func specAutoPrintBatch(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{"-c", `len(lines)`},
+		"a\nb\nc\n",
+		`^3\n$`,
+	)
+}
+
+func specAutoPrintSimple(t *testing.T) {
+	assertCmdArgs(t, goscriptPath,
+		[]string{"-c", `"hello from auto-print"`},
+		"hello from auto-print",
+	)
+}
+
+func specAutoPrintSkipsExplicit(t *testing.T) {
+	// Explicit fmt.Println — auto-print must NOT double-wrap.
+	assertCmdArgs(t, goscriptPath,
+		[]string{"-c", `fmt.Println("explicit")`},
+		`^explicit\n$`,
 	)
 }
 

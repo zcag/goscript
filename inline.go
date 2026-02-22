@@ -68,6 +68,7 @@ func containsIdent(s, name string) bool {
 // parallel > 0 activates concurrent loop mode (pipe only).
 func InlineToScript(code string, fieldSep string, parallel int) ([]byte, InlineMode, error) {
 	mode := DetectInlineMode(code)
+	code = wrapLastExpr(code)
 	body := indentAsBlock(strings.TrimSpace(code), "\t")
 
 	switch mode {
