@@ -23,6 +23,7 @@ func TestScripts(t *testing.T) {
 	t.Run("auto-print: simple inline", specAutoPrintSimple)
 	t.Run("auto-print: skips explicit print", specAutoPrintSkipsExplicit)
 	t.Run("--explain prints source", specExplain)
+	t.Run("-F field separator", specFieldSep)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -125,6 +126,14 @@ func specBatchModeLines(t *testing.T) {
 		[]string{"-c", `fmt.Println(len(lines))`},
 		"a\nb\nc\n",
 		`^3\n$`,
+	)
+}
+
+func specFieldSep(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{"-c", `f[1]`, "-F", ","},
+		"a,b,c\n1,2,3\n",
+		`b\n2`,
 	)
 }
 
