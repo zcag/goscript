@@ -6,18 +6,52 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // ---- helpers ----
 
+// die prints err to stderr and exits 1. No-op if err is nil.
 func die(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
+
+// must unwraps a (value, error) pair, calling die on error.
+//
+//	n, err := strconv.Atoi(s)   →   n := must(strconv.Atoi(s))
+func must[T any](v T, err error) T {
+	die(err)
+	return v
+}
+
+// atoi parses s as an int. Exits on failure.
+func atoi(s string) int { return must(strconv.Atoi(strings.TrimSpace(s))) }
+
+// atof parses s as a float64. Exits on failure.
+func atof(s string) float64 { return must(strconv.ParseFloat(strings.TrimSpace(s), 64)) }
+
+// pp returns v formatted as indented JSON (falls back to %+v on error).
+// Used with auto-print: pp(myMap) prints the JSON automatically.
+func pp(v any) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("%+v", v)
+	}
+	return string(b)
+}
+
+// trim returns strings.TrimSpace(s).
+func trim(s string) string { return strings.TrimSpace(s) }
+
+// splitlines splits a multi-line string into a slice, dropping the trailing newline.
+func splitlines(s string) []string { return strings.Split(strings.TrimRight(s, "\n"), "\n") }
 
 // ---- end helpers ----
 
