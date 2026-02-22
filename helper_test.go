@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -75,6 +77,43 @@ func _assertCmd(t *testing.T, script string, args []string, want string, wantErr
 	got := string(out)
 	if !regexp.MustCompile(want).MatchString(got) {
 		t.Fatalf("got %q want /%s/\ncommand: %s %v", got, want, script, args)
+	}
+}
+
+// assertCmdStdin runs goscript with given args, feeds stdinData, and matches output.
+func assertCmdStdin(t *testing.T, args []string, stdinData string, want string) {
+	t.Helper()
+	cmd := exec.Command(goscriptPath, args...)
+	cmd.Stdin = bytes.NewBufferString(stdinData)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("command error: %v\noutput: %s\ncommand: %s %v", err, out, goscriptPath, args)
+	}
+	got := string(out)
+	if !regexp.MustCompile(want).MatchString(got) {
+		t.Fatalf("got %q want /%s/\ncommand: %s %v", got, want, goscriptPath, args)
+	}
+}
+
+func assertDirExists(t *testing.T, dir string) {
+	t.Helper()
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("expected dir %s to exist: %v", dir, err)
+	}
+	if !info.IsDir() {
+		t.Fatalf("expected %s to be a directory", dir)
+	}
+}
+
+func assertFileContains(t *testing.T, path, want string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("reading %s: %v", path, err)
+	}
+	if !strings.Contains(string(data), want) {
+		t.Fatalf("file %s does not contain %q\ncontents:\n%s", path, want, data)
 	}
 }
 

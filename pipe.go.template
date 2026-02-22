@@ -1,0 +1,53 @@
+// vim: ft=go
+
+// pipe_template.go
+// This file is used as a template for pipe-mode inline scripts.
+// Magic variables available in the loop body:
+//   x / line  - current line (string)
+//   i / idx   - loop index (int)
+//   f / fields - split fields of x ([]string)
+// Always available:
+//   lines     - all stdin lines ([]string)
+
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+// ---- helpers ----
+
+func die(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+// ---- end helpers ----
+
+func main() {
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	_ = lines
+
+	// {{PIPE_BEFORE}}
+
+	for i, x := range lines {
+		line := x
+		idx := i
+		f := {{FIELDS_EXPR}}
+		fields := f
+		_ = line; _ = idx; _ = f; _ = fields
+		// {{PIPE_BODY}}
+	}
+
+	// {{PIPE_AFTER}}
+}

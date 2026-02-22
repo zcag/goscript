@@ -1,0 +1,38 @@
+// vim: ft=go
+
+// batch_template.go
+// This file is used as a template for batch-mode inline scripts.
+// All stdin is pre-read. Available:
+//   lines  - all stdin lines ([]string)
+//   stdin  - os.Stdin (*os.File) — NOTE: already read, seek not possible
+
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+// ---- helpers ----
+
+func die(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+// ---- end helpers ----
+
+func main() {
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	_ = lines
+
+	// {{BATCH_BODY}}
+}

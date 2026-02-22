@@ -10,6 +10,10 @@ func TestScripts(t *testing.T) {
 	t.Run("inline runs", specInline)
 	t.Run("outputs binary", specOutput)
 	t.Run("migrates script to dir", specMigrate)
+	t.Run("pipe mode: x var per line", specPipeModeX)
+	t.Run("pipe mode: i index var", specPipeModeIdx)
+	t.Run("pipe mode: f fields var", specPipeModeFields)
+	t.Run("batch mode: lines var", specBatchModeLines)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -83,6 +87,38 @@ func specOutput(t *testing.T) {
 	assertCmd(t, testOutBinPath, "output-ok")
 }
 
+func specPipeModeX(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{"-c", `fmt.Println(strings.ToUpper(x))`},
+		"hello\nworld\n",
+		`HELLO\nWORLD`,
+	)
+}
+
+func specPipeModeIdx(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{"-c", `fmt.Printf("%d %s\n", i, x)`},
+		"a\nb\nc\n",
+		`0 a`,
+	)
+}
+
+func specPipeModeFields(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{"-c", `fmt.Println(f[1])`},
+		"foo bar baz\nalpha beta gamma\n",
+		`bar\nbeta`,
+	)
+}
+
+func specBatchModeLines(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{"-c", `fmt.Println(len(lines))`},
+		"a\nb\nc\n",
+		`^3\n$`,
+	)
+}
+
 func specMigrate(t *testing.T) {
 	var scr = prepScript(t,
    `#!/bin/env goscript
@@ -96,9 +132,9 @@ func specMigrate(t *testing.T) {
 			fmt.Println(err.Error())
 		}`)
 
-	assertCmdErrorArgs(t, goscriptPath, []string{scr, "-m", testMigrateDir}, "not implemented")
+	assertCmdArgs(t, goscriptPath, []string{scr, "-m", testMigrateDir}, "Migrated to")
 
-	// assertDirExists(t, testMigrateDir)
-	// assertFileContent(t, testMigrateDir + "/go.mod", "github.com/package/errors")
-	// assertFileContent(t, testMigrateDir + "/main.go", "boomalaka")
+	assertDirExists(t, testMigrateDir)
+	assertFileContains(t, testMigrateDir+"/go.mod", "github.com/pkg/errors")
+	assertFileContains(t, testMigrateDir+"/main.go", "boomalaka")
 }
