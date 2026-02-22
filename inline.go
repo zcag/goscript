@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -15,6 +16,7 @@ const (
 	markerPipeAfter  = "// {{PIPE_AFTER}}"
 	markerBatchBody  = "// {{BATCH_BODY}}"
 	markerFields     = "{{FIELDS_EXPR}}"
+	markerParallelN  = "{{PARALLEL_N}}"
 )
 
 //go:embed script.go.template
@@ -25,6 +27,9 @@ var pipeTmpl []byte
 
 //go:embed batch.go.template
 var batchTmpl []byte
+
+//go:embed parallel.go.template
+var parallelTmpl []byte
 
 // InlineMode describes which template to use.
 type InlineMode int
@@ -81,6 +86,21 @@ func InlineToScript(code string, fieldSep string, parallel int) ([]byte, InlineM
 	}
 }
 
+func buildParallelScript(body string, fieldSep string, n int) []byte {
+	var fieldsExpr string
+	if fieldSep == "" {
+		fieldsExpr = "strings.Fields(x)"
+	} else {
+		fieldsExpr = `strings.Split(x, "` + fieldSep + `")`
+	}
+
+	out := parallelTmpl
+	out = bytes.Replace(out, []byte(markerFields), []byte(fieldsExpr), 1)
+	out = bytes.Replace(out, []byte(markerParallelN), []byte(fmt.Sprintf("%d", n)), 1)
+	out = bytes.Replace(out, []byte(markerPipeBody), []byte(body), 1)
+	return out
+}
+
 func buildSimpleScript(body string) []byte {
 	return bytes.Replace(simpleTmpl, []byte(markerInlineBody), []byte(body), 1)
 }
@@ -90,7 +110,9 @@ func buildBatchScript(body string) []byte {
 }
 
 func buildPipeScript(body string, fieldSep string, parallel int) []byte {
-	_ = parallel // parallel handled separately via parallel template
+	if parallel > 0 {
+		return buildParallelScript(body, fieldSep, parallel)
+	}
 	var fieldsExpr string
 	if fieldSep == "" {
 		fieldsExpr = "strings.Fields(x)"

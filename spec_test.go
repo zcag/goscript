@@ -24,6 +24,7 @@ func TestScripts(t *testing.T) {
 	t.Run("auto-print: skips explicit print", specAutoPrintSkipsExplicit)
 	t.Run("--explain prints source", specExplain)
 	t.Run("-F field separator", specFieldSep)
+	t.Run("-j parallel pipe", specParallel)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -127,6 +128,23 @@ func specBatchModeLines(t *testing.T) {
 		"a\nb\nc\n",
 		`^3\n$`,
 	)
+}
+
+func specParallel(t *testing.T) {
+	// With -j 4, all lines should still be processed (order not guaranteed).
+	// We check that all 3 results appear somewhere in the output.
+	cmd := exec.Command(goscriptPath, "-c", `fmt.Println(strings.ToUpper(x))`, "-j", "4")
+	cmd.Stdin = strings.NewReader("hello\nworld\nfoo\n")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("parallel failed: %v\n%s", err, out)
+	}
+	got := string(out)
+	for _, want := range []string{"HELLO", "WORLD", "FOO"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("parallel output missing %q:\n%s", want, got)
+		}
+	}
 }
 
 func specFieldSep(t *testing.T) {
