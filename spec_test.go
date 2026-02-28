@@ -79,7 +79,7 @@ func specImports(t *testing.T) {
 }
 
 func specInline(t *testing.T) {
-	assertCmdArgs(t, goscriptPath, []string{"-c", `fmt.Println("inline-ok")`}, "inline-ok")
+	assertCmdArgs(t, goscriptPath, []string{`fmt.Println("inline-ok")`}, "inline-ok")
 }
 
 func specOutput(t *testing.T) {
@@ -100,7 +100,7 @@ func specOutput(t *testing.T) {
 
 func specPipeModeX(t *testing.T) {
 	assertCmdStdin(t,
-		[]string{"-c", `fmt.Println(strings.ToUpper(x))`},
+		[]string{`fmt.Println(strings.ToUpper(x))`},
 		"hello\nworld\n",
 		`HELLO\nWORLD`,
 	)
@@ -108,7 +108,7 @@ func specPipeModeX(t *testing.T) {
 
 func specPipeModeIdx(t *testing.T) {
 	assertCmdStdin(t,
-		[]string{"-c", `fmt.Printf("%d %s\n", i, x)`},
+		[]string{`fmt.Printf("%d %s\n", i, x)`},
 		"a\nb\nc\n",
 		`0 a`,
 	)
@@ -116,7 +116,7 @@ func specPipeModeIdx(t *testing.T) {
 
 func specPipeModeFields(t *testing.T) {
 	assertCmdStdin(t,
-		[]string{"-c", `fmt.Println(f[1])`},
+		[]string{`fmt.Println(f[1])`},
 		"foo bar baz\nalpha beta gamma\n",
 		`bar\nbeta`,
 	)
@@ -124,7 +124,7 @@ func specPipeModeFields(t *testing.T) {
 
 func specBatchModeLines(t *testing.T) {
 	assertCmdStdin(t,
-		[]string{"-c", `fmt.Println(len(lines))`},
+		[]string{`fmt.Println(len(lines))`},
 		"a\nb\nc\n",
 		`^3\n$`,
 	)
@@ -133,7 +133,7 @@ func specBatchModeLines(t *testing.T) {
 func specParallel(t *testing.T) {
 	// With -j 4, all lines should still be processed (order not guaranteed).
 	// We check that all 3 results appear somewhere in the output.
-	cmd := exec.Command(goscriptPath, "-c", `fmt.Println(strings.ToUpper(x))`, "-j", "4")
+	cmd := exec.Command(goscriptPath, `fmt.Println(strings.ToUpper(x))`, "-j", "4")
 	cmd.Stdin = strings.NewReader("hello\nworld\nfoo\n")
 	out, err := cmd.Output()
 	if err != nil {
@@ -149,14 +149,14 @@ func specParallel(t *testing.T) {
 
 func specFieldSep(t *testing.T) {
 	assertCmdStdin(t,
-		[]string{"-c", `f[1]`, "-F", ","},
+		[]string{`f[1]`, "-F", ","},
 		"a,b,c\n1,2,3\n",
 		`b\n2`,
 	)
 }
 
 func specExplain(t *testing.T) {
-	cmd := exec.Command(goscriptPath, "--explain", "-c", `strings.ToUpper(x)`)
+	cmd := exec.Command(goscriptPath, "--explain", `strings.ToUpper(x)`)
 	cmd.Stdin = strings.NewReader("")
 	out, err := cmd.Output()
 	if err != nil {
@@ -174,7 +174,7 @@ func specExplain(t *testing.T) {
 func specAutoPrintPipe(t *testing.T) {
 	// No fmt.Println — auto-print should kick in.
 	assertCmdStdin(t,
-		[]string{"-c", `strings.ToUpper(x)`},
+		[]string{`strings.ToUpper(x)`},
 		"hello\nworld\n",
 		`HELLO\nWORLD`,
 	)
@@ -182,7 +182,7 @@ func specAutoPrintPipe(t *testing.T) {
 
 func specAutoPrintBatch(t *testing.T) {
 	assertCmdStdin(t,
-		[]string{"-c", `len(lines)`},
+		[]string{`len(lines)`},
 		"a\nb\nc\n",
 		`^3\n$`,
 	)
@@ -190,7 +190,7 @@ func specAutoPrintBatch(t *testing.T) {
 
 func specAutoPrintSimple(t *testing.T) {
 	assertCmdArgs(t, goscriptPath,
-		[]string{"-c", `"hello from auto-print"`},
+		[]string{`"hello from auto-print"`},
 		"hello from auto-print",
 	)
 }
@@ -198,7 +198,7 @@ func specAutoPrintSimple(t *testing.T) {
 func specAutoPrintSkipsExplicit(t *testing.T) {
 	// Explicit fmt.Println — auto-print must NOT double-wrap.
 	assertCmdArgs(t, goscriptPath,
-		[]string{"-c", `fmt.Println("explicit")`},
+		[]string{`fmt.Println("explicit")`},
 		`^explicit\n$`,
 	)
 }

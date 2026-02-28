@@ -5,6 +5,28 @@ Supports importing **any** Go module automatically — no `go.mod` required.
 
 ---
 
+## Inline mode
+
+Run Go snippets directly — just pass the code as an argument:
+
+```bash
+goscript 'fmt.Println("hello")'
+```
+
+### Auto-print
+
+The last expression in your snippet is automatically printed — no `fmt.Println` needed:
+
+```bash
+goscript '"hello " + "world"'     # prints: hello world
+goscript 'os.Getenv("HOME")'      # prints: /home/you
+goscript 'time.Now().Year()'      # prints: 2025
+```
+
+Explicit `fmt.Print*` calls are detected and left untouched (no double-printing).
+
+---
+
 ## Script mode
 
 Write a single executable file with a shebang and run it like a script.
@@ -41,28 +63,6 @@ Scripts must use `package main` and define `func main()` — it's real Go, not a
 
 ---
 
-## Inline mode (`-c`)
-
-Run Go snippets without a file. Auto-imports are handled; compiled binaries are cached.
-
-```bash
-goscript -c 'fmt.Println("hello")'
-```
-
-### Auto-print
-
-The last expression in your snippet is automatically printed — no `fmt.Println` needed:
-
-```bash
-goscript -c '"hello " + "world"'     # prints: hello world
-goscript -c 'os.Getenv("HOME")'      # prints: /home/you
-goscript -c 'time.Now().Year()'      # prints: 2025
-```
-
-Explicit `fmt.Print*` calls are detected and left untouched (no double-printing).
-
----
-
 ## Pipe mode (automatic)
 
 When your snippet references any of these **magic variables**, pipe mode is activated
@@ -80,10 +80,10 @@ automatically — no flags required:
 Reference `x` or `line` → loops over stdin line by line:
 
 ```bash
-ls | goscript -c 'strings.ToUpper(x)'
-ps aux | goscript -c 'f[0]'                    # first field of each line
-cat data.csv | goscript -c 'f[1]' -F ','       # CSV second column
-cat file.txt | goscript -c 'fmt.Sprintf("%3d  %s", i, x)'  # add line numbers
+ls | goscript 'strings.ToUpper(x)'
+ps aux | goscript 'f[0]'                    # first field of each line
+cat data.csv | goscript 'f[1]' -F ','       # CSV second column
+cat file.txt | goscript 'fmt.Sprintf("%3d  %s", i, x)'  # add line numbers
 ```
 
 ### Batch processing
@@ -92,13 +92,13 @@ Reference `lines` → reads all stdin first, then runs your code once:
 
 ```bash
 wc -l < file.txt                               # shell way
-cat file.txt | goscript -c 'len(lines)'        # Go way, auto-printed
+cat file.txt | goscript 'len(lines)'           # Go way, auto-printed
 
 # Sort lines
-cat file.txt | goscript -c 'sort.Strings(lines); strings.Join(lines, "\n")'
+cat file.txt | goscript 'sort.Strings(lines); strings.Join(lines, "\n")'
 
 # Count unique words
-cat file.txt | goscript -c '
+cat file.txt | goscript '
     counts := map[string]int{}
     for _, l := range lines { counts[l]++ }
     pp(counts)
@@ -110,8 +110,8 @@ cat file.txt | goscript -c '
 `-F sep` changes how `f`/`fields` is split. Default is whitespace (like `strings.Fields`).
 
 ```bash
-cat data.csv | goscript -c 'f[2]' -F ','       # third CSV column
-cat /etc/passwd | goscript -c 'f[0]' -F ':'    # usernames
+cat data.csv | goscript 'f[2]' -F ','       # third CSV column
+cat /etc/passwd | goscript 'f[0]' -F ':'    # usernames
 ```
 
 ### Parallel processing (`-j N`)
@@ -119,10 +119,10 @@ cat /etc/passwd | goscript -c 'f[0]' -F ':'    # usernames
 `-j N` runs the loop body across N goroutines (output order not guaranteed):
 
 ```bash
-cat urls.txt | goscript -c 'fetch(x)' -j 20
+cat urls.txt | goscript 'fetch(x)' -j 20
 
 # Square numbers in parallel
-seq 100 | goscript -c 'atoi(x) * atoi(x)' -j 8
+seq 100 | goscript 'atoi(x) * atoi(x)' -j 8
 ```
 
 ---
@@ -144,8 +144,8 @@ Every inline/pipe/batch script gets these functions for free:
 Examples:
 
 ```bash
-seq 5 | goscript -c 'atoi(x) * atoi(x)'        # squares
-echo '{"a":1}' | goscript -c 'pp(map[string]int{"x": 42})'
+seq 5 | goscript 'atoi(x) * atoi(x)'        # squares
+echo '{"a":1}' | goscript 'pp(map[string]int{"x": 42})'
 ```
 
 ---
@@ -155,8 +155,8 @@ echo '{"a":1}' | goscript -c 'pp(map[string]int{"x": 42})'
 Print the Go source that would be compiled, without actually running it:
 
 ```bash
-ls | goscript --explain -c 'strings.ToUpper(x)'
-goscript --explain -c 'pp(os.Environ())'
+ls | goscript --explain 'strings.ToUpper(x)'
+goscript --explain 'pp(os.Environ())'
 ```
 
 Useful for understanding what's generated or debugging unexpected output.
@@ -166,8 +166,8 @@ Useful for understanding what's generated or debugging unexpected output.
 ## Cache control
 
 ```bash
-goscript --no-cache -c 'fmt.Println("fresh compile")'   # skip cache, always recompile
-goscript --clear-cache                                    # wipe entire cache
+goscript --no-cache 'fmt.Println("fresh compile")'   # skip cache, always recompile
+goscript --clear-cache                                # wipe entire cache
 ```
 
 Cache lives at `~/.cache/goscript/` (respects `$XDG_CACHE_HOME`):
@@ -197,7 +197,7 @@ Make sure `$GOPATH/bin` (or `$HOME/go/bin`) is in your `PATH`.
 
 ## How it works
 
-1. Source is read (from file or `-c` snippet)
+1. Source is read (from file or inline snippet)
 2. For inline mode: magic variables are detected → appropriate template is chosen
 3. Auto-print: if the last statement is a bare expression, it's wrapped in `fmt.Println`
 4. Source is hashed → cache is checked

@@ -36,7 +36,6 @@ type Config struct {
 }
 
 type cliArgs struct {
-	Code       string `short:"c" help:"Inline Go code. Magic vars: x/line (current line), i/idx (index), f/fields (split fields), lines (all lines)."`
 	FieldSep   string `short:"F" help:"Field separator for f/fields in pipe mode (default: whitespace split)."`
 	Out        string `short:"o" help:"Build output path."`
 	Mig        string `short:"m" help:"Migrate script to a Go module directory."`
@@ -45,8 +44,8 @@ type cliArgs struct {
 	NoCache    bool   `help:"Skip cache lookup; always recompile."`
 	ClearCache bool   `help:"Delete the goscript cache directory and exit."`
 
-	Script string   `arg:"" optional:"" help:"Go script path (default run)."`
-	Args   []string `arg:"" optional:"" help:"Args for script."`
+	Script string   `arg:"" optional:"" help:"Inline Go code snippet or path to a Go script."`
+	Args   []string `arg:"" optional:"" help:"Args passed to the script."`
 }
 
 var cli cliArgs
@@ -62,9 +61,7 @@ func ParseArgs(argv []string) Config {
 	}
 
 	cfg := Config{
-		ScriptPath: cli.Script,
 		Args:       cli.Args,
-		InlineCode: cli.Code,
 		OutputPath: cli.Out,
 		MigrateDir: cli.Mig,
 		FieldSep:   cli.FieldSep,
@@ -72,10 +69,21 @@ func ParseArgs(argv []string) Config {
 		NoCache:    cli.NoCache,
 	}
 
-	if cli.Code != "" {
-		cfg.Input = InputInline
-	} else {
+	if isFilePath(cli.Script) {
 		cfg.Input = InputScript
+		cfg.ScriptPath = cli.Script
+	} else {
+		cfg.Input = InputInline
+		cfg.InlineCode = cli.Script
+	}
+
+	if cli.FieldSep != "" && cfg.Input != InputInline {
+		ctx.Errorf("-F only applies to inline mode")
+		os.Exit(1)
+	}
+	if cli.Parallel > 0 && cfg.Input != InputInline {
+		ctx.Errorf("-j only applies to inline mode")
+		os.Exit(1)
 	}
 
 	switch {
@@ -98,20 +106,18 @@ func validate(cli cliArgs) (bool, string) {
 	if cli.ClearCache {
 		return true, ""
 	}
-	if cli.Code == "" && cli.Script == "" {
-		return false, "provide inline code with -c or a script path"
-	}
-	if cli.Code != "" && cli.Script != "" {
-		return false, "only one of inline code or input script should be set"
+	if cli.Script == "" {
+		return false, "provide an inline code snippet or a script path"
 	}
 	if cli.Out != "" && cli.Mig != "" {
 		return false, "can't have both output bin and migrate targets"
 	}
-	if cli.FieldSep != "" && cli.Code == "" {
-		return false, "-F only applies to inline mode (-c)"
-	}
-	if cli.Parallel > 0 && cli.Code == "" {
-		return false, "--parallel only applies to inline mode (-c)"
-	}
 	return true, ""
+}
+
+// isFilePath reports whether s refers to an existing file on disk.
+// Used to distinguish inline code snippets from script paths.
+func isFilePath(s string) bool {
+	_, err := os.Stat(s)
+	return err == nil
 }
