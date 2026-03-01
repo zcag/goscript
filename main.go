@@ -61,7 +61,7 @@ func fatal(err error) {
 // Returns the source bytes and the detected InlineMode (for informational use).
 func readContent(cfg Config) ([]byte, InlineMode, error) {
 	if cfg.Input == InputInline {
-		src, mode, err := InlineToScript(cfg.InlineCode, cfg.FieldSep, cfg.Parallel)
+		src, mode, err := InlineToScript(cfg.InlineCode, cfg.FieldSep, cfg.Parallel, cfg.Regex)
 		return src, mode, err
 	}
 

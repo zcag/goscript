@@ -63,6 +63,36 @@ func trim(s string) string { return strings.TrimSpace(s) }
 // splitlines splits a multi-line string into a slice, dropping the trailing newline.
 func splitlines(s string) []string { return strings.Split(strings.TrimRight(s, "\n"), "\n") }
 
+var _reCache sync.Map
+
+func _reCached(pat string) *regexp.Regexp {
+	if v, ok := _reCache.Load(pat); ok {
+		return v.(*regexp.Regexp)
+	}
+	r := regexp.MustCompile(pat)
+	_reCache.Store(pat, r)
+	return r
+}
+
+// match returns submatches: [0]=full match, [1+]=capture groups. nil if no match.
+func match(pat, s string) []string { return _reCached(pat).FindStringSubmatch(s) }
+
+// named returns named capture groups as a map. nil if no match.
+func named(pat, s string) map[string]string {
+	r := _reCached(pat)
+	m := r.FindStringSubmatch(s)
+	if m == nil {
+		return nil
+	}
+	result := map[string]string{}
+	for i, name := range r.SubexpNames() {
+		if name != "" && i < len(m) {
+			result[name] = m[i]
+		}
+	}
+	return result
+}
+
 // ---- end helpers ----
 
 func main() {
@@ -73,6 +103,8 @@ func main() {
 		lines = append(lines, scanner.Text())
 	}
 	_ = lines
+
+	// {{PIPE_BEFORE}}
 
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, {{PARALLEL_N}})

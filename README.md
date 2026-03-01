@@ -125,6 +125,40 @@ cat urls.txt | goscript 'fetch(x)' -j 20
 seq 100 | goscript 'atoi(x) * atoi(x)' -j 8
 ```
 
+### Regex pipe mode (`-r pattern`)
+
+`-r pattern` compiles a regex and activates pipe mode. Only lines matching the pattern
+are processed (non-matching lines are skipped). Inside the loop:
+
+| Variable/func | Type | Description |
+|---------------|------|-------------|
+| `r` | `*regexp.Regexp` | the compiled regex |
+| `m` | `[]string` | submatches: `m[0]`=full match, `m[1+]`=capture groups |
+| `n` | `map[string]string` | named capture groups |
+| `sub(repl, s)` | `string` | replace first match (supports `$1`, `$2`, `${name}`) |
+| `suball(repl, s)` | `string` | replace all matches |
+
+```bash
+# filter to matching lines only
+cat file | goscript -r '\d+' 'x'
+
+# extract first capture group
+cat file | goscript -r '(\d+)' 'm[1]'
+
+# named capture groups
+cat /etc/passwd | goscript -r '(?P<user>[^:]+):.*:(?P<shell>[^:]+)$' \
+  'n["user"] + " → " + n["shell"]'
+
+# replace first match
+cat file | goscript -r '(\w+)@(\w+)' 'sub("$1 at $2", x)'
+
+# replace all matches
+cat file | goscript -r '\d+' 'suball("NUM", x)'
+
+# use r directly for full regexp API
+cat file | goscript -r '\w+' 'r.ReplaceAllStringFunc(x, strings.ToUpper)'
+```
+
 ---
 
 ## Helpers
@@ -140,12 +174,18 @@ Every inline/pipe/batch script gets these functions for free:
 | `pp(v) string` | Format any value as indented JSON. Auto-print friendly. |
 | `trim(s)` | `strings.TrimSpace(s)` shortcut. |
 | `splitlines(s)` | Split a multi-line string into `[]string`. |
+| `match(pat, s)` | `[]string` of submatches, nil if no match. Cached. |
+| `named(pat, s)` | `map[string]string` of named captures, nil if no match. Cached. |
 
 Examples:
 
 ```bash
 seq 5 | goscript 'atoi(x) * atoi(x)'        # squares
 echo '{"a":1}' | goscript 'pp(map[string]int{"x": 42})'
+
+# match/named without -r (handle nil yourself for non-matching lines)
+cat file | goscript 'match(`v(\d+)`, x)[1]'
+cat file | goscript 'named(`(?P<maj>\d+)\.(?P<min>\d+)`, x)["maj"]'
 ```
 
 ---

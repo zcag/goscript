@@ -25,6 +25,13 @@ func TestScripts(t *testing.T) {
 	t.Run("--explain prints source", specExplain)
 	t.Run("-F field separator", specFieldSep)
 	t.Run("-j parallel pipe", specParallel)
+	t.Run("match() helper extracts group", specMatchHelper)
+	t.Run("named() helper extracts named group", specNamedHelper)
+	t.Run("-r filters non-matching lines", specRegexFilter)
+	t.Run("-r exposes m capture groups", specRegexM)
+	t.Run("-r exposes n named groups", specRegexN)
+	t.Run("-r sub() replaces first match", specRegexSub)
+	t.Run("-r suball() replaces all matches", specRegexSuball)
 }
 
 func specBasicArgs(t *testing.T) {
@@ -200,6 +207,68 @@ func specAutoPrintSkipsExplicit(t *testing.T) {
 	assertCmdArgs(t, goscriptPath,
 		[]string{`fmt.Println("explicit")`},
 		`^explicit\n$`,
+	)
+}
+
+func specMatchHelper(t *testing.T) {
+	// match() without -r; all input lines match so nil-check not needed
+	assertCmdStdin(t,
+		[]string{`match("(\\d+)", x)[1]`},
+		"foo123\nbaz456\n",
+		`^123\n456\n$`,
+	)
+}
+
+func specNamedHelper(t *testing.T) {
+	assertCmdStdin(t,
+		[]string{`named("(?P<num>\\d+)", x)["num"]`},
+		"foo123\nbaz456\n",
+		`123\n456`,
+	)
+}
+
+func specRegexFilter(t *testing.T) {
+	// -r should skip lines that don't match
+	assertCmdStdin(t,
+		[]string{`x`, "-r", `\d+`},
+		"foo\nbar123\nbaz\nqux456\n",
+		`^bar123\nqux456\n$`,
+	)
+}
+
+func specRegexM(t *testing.T) {
+	// m[1] is first capture group
+	assertCmdStdin(t,
+		[]string{`m[1]`, "-r", `(\d+)`},
+		"foo123\nbar\nbaz456\n",
+		`^123\n456\n$`,
+	)
+}
+
+func specRegexN(t *testing.T) {
+	// named capture groups via n
+	assertCmdStdin(t,
+		[]string{`n["num"]`, "-r", `(?P<num>\d+)`},
+		"foo123\nbar\nbaz456\n",
+		`^123\n456\n$`,
+	)
+}
+
+func specRegexSub(t *testing.T) {
+	// sub replaces first match using -r pattern
+	assertCmdStdin(t,
+		[]string{`sub("[$1]", x)`, "-r", `(\d+)`},
+		"a1b2\nc3\n",
+		`^a\[1\]b2\nc\[3\]\n$`,
+	)
+}
+
+func specRegexSuball(t *testing.T) {
+	// suball replaces all matches using -r pattern
+	assertCmdStdin(t,
+		[]string{`suball("[$1]", x)`, "-r", `(\d+)`},
+		"a1b2\nc3\n",
+		`^a\[1\]b\[2\]\nc\[3\]\n$`,
 	)
 }
 

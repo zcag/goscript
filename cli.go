@@ -32,6 +32,7 @@ type Config struct {
 	MigrateDir string
 	FieldSep   string
 	Parallel   int
+	Regex      string
 	NoCache    bool
 }
 
@@ -40,6 +41,7 @@ type cliArgs struct {
 	Out        string `short:"o" help:"Build output path."`
 	Mig        string `short:"m" help:"Migrate script to a Go module directory."`
 	Parallel   int    `short:"j" help:"Run pipe loop concurrently with N goroutines." default:"0"`
+	Regex      string `short:"r" help:"Regex pattern for pipe mode: exposes r, m, n, sub(), suball(); skips non-matching lines."`
 	Explain    bool   `help:"Print generated Go source without compiling."`
 	NoCache    bool   `help:"Skip cache lookup; always recompile."`
 	ClearCache bool   `help:"Delete the goscript cache directory and exit."`
@@ -66,6 +68,7 @@ func ParseArgs(argv []string) Config {
 		MigrateDir: cli.Mig,
 		FieldSep:   cli.FieldSep,
 		Parallel:   cli.Parallel,
+		Regex:      cli.Regex,
 		NoCache:    cli.NoCache,
 	}
 
@@ -83,6 +86,10 @@ func ParseArgs(argv []string) Config {
 	}
 	if cli.Parallel > 0 && cfg.Input != InputInline {
 		ctx.Errorf("-j only applies to inline mode")
+		os.Exit(1)
+	}
+	if cli.Regex != "" && cfg.Input != InputInline {
+		ctx.Errorf("-r only applies to inline mode")
 		os.Exit(1)
 	}
 

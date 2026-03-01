@@ -71,14 +71,19 @@ func containsIdent(s, name string) bool {
 // InlineToScript converts a code snippet to a complete Go source file.
 // It auto-detects the appropriate template based on magic variable usage.
 // parallel > 0 activates concurrent loop mode (pipe only).
-func InlineToScript(code string, fieldSep string, parallel int) ([]byte, InlineMode, error) {
+// regexPat, when non-empty, compiles a regex and exposes r/m/n/sub/suball in pipe mode.
+func InlineToScript(code string, fieldSep string, parallel int, regexPat string) ([]byte, InlineMode, error) {
 	mode := DetectInlineMode(code)
+	// -r always implies pipe mode (m/n/sub/suball only exist in the loop context)
+	if regexPat != "" && mode == ModeSimple {
+		mode = ModePipe
+	}
 	code = wrapLastExpr(code)
 	body := indentAsBlock(strings.TrimSpace(code), "\t")
 
 	switch mode {
 	case ModePipe:
-		return buildPipeScript(body, fieldSep, parallel), mode, nil
+		return buildPipeScript(body, fieldSep, parallel, regexPat), mode, nil
 	case ModeBatch:
 		return buildBatchScript(body), mode, nil
 	default:
@@ -86,7 +91,7 @@ func InlineToScript(code string, fieldSep string, parallel int) ([]byte, InlineM
 	}
 }
 
-func buildParallelScript(body string, fieldSep string, n int) []byte {
+func buildParallelScript(body string, fieldSep string, n int, regexPat string) []byte {
 	var fieldsExpr string
 	if fieldSep == "" {
 		fieldsExpr = "strings.Fields(x)"
@@ -94,9 +99,16 @@ func buildParallelScript(body string, fieldSep string, n int) []byte {
 		fieldsExpr = `strings.Split(x, "` + fieldSep + `")`
 	}
 
+	before := ""
+	if regexPat != "" {
+		body = indentAsBlock(regexLoopPrefix("return"), "\t") + "\n" + body
+		before = indentAsBlock(regexSetupBefore(regexPat), "\t")
+	}
+
 	out := parallelTmpl
 	out = bytes.Replace(out, []byte(markerFields), []byte(fieldsExpr), 1)
 	out = bytes.Replace(out, []byte(markerParallelN), []byte(fmt.Sprintf("%d", n)), 1)
+	out = bytes.Replace(out, []byte(markerPipeBefore), []byte(before), 1)
 	out = bytes.Replace(out, []byte(markerPipeBody), []byte(body), 1)
 	return out
 }
@@ -109,9 +121,9 @@ func buildBatchScript(body string) []byte {
 	return bytes.Replace(batchTmpl, []byte(markerBatchBody), []byte(body), 1)
 }
 
-func buildPipeScript(body string, fieldSep string, parallel int) []byte {
+func buildPipeScript(body string, fieldSep string, parallel int, regexPat string) []byte {
 	if parallel > 0 {
-		return buildParallelScript(body, fieldSep, parallel)
+		return buildParallelScript(body, fieldSep, parallel, regexPat)
 	}
 	var fieldsExpr string
 	if fieldSep == "" {
@@ -120,12 +132,49 @@ func buildPipeScript(body string, fieldSep string, parallel int) []byte {
 		fieldsExpr = `strings.Split(x, "` + fieldSep + `")`
 	}
 
+	before := ""
+	if regexPat != "" {
+		body = indentAsBlock(regexLoopPrefix("continue"), "\t") + "\n" + body
+		before = indentAsBlock(regexSetupBefore(regexPat), "\t")
+	}
+
 	out := pipeTmpl
 	out = bytes.Replace(out, []byte(markerFields), []byte(fieldsExpr), 1)
-	out = bytes.Replace(out, []byte(markerPipeBefore), []byte(""), 1)
+	out = bytes.Replace(out, []byte(markerPipeBefore), []byte(before), 1)
 	out = bytes.Replace(out, []byte(markerPipeBody), []byte(body), 1)
 	out = bytes.Replace(out, []byte(markerPipeAfter), []byte(""), 1)
 	return out
+}
+
+// regexSetupBefore generates the code placed before the pipe loop when -r is used.
+// It compiles the regex into r and defines sub/suball as closures over r.
+func regexSetupBefore(pat string) string {
+	return fmt.Sprintf(`r := regexp.MustCompile(%s)
+sub := func(repl, s string) string {
+	loc := r.FindStringSubmatchIndex(s)
+	if loc == nil {
+		return s
+	}
+	var dst []byte
+	dst = r.ExpandString(dst, repl, s, loc)
+	return s[:loc[0]] + string(dst) + s[loc[1]:]
+}
+suball := func(repl, s string) string { return r.ReplaceAllString(s, repl) }
+_ = sub; _ = suball`, fmt.Sprintf("%q", pat))
+}
+
+// regexLoopPrefix generates the per-line setup injected at the top of the loop body.
+// jumpStmt is "continue" for pipe mode and "return" for parallel mode.
+func regexLoopPrefix(jumpStmt string) string {
+	return `m := r.FindStringSubmatch(x)
+if m == nil { ` + jumpStmt + ` }
+n := map[string]string{}
+for _i, _name := range r.SubexpNames() {
+	if _name != "" && _i < len(m) {
+		n[_name] = m[_i]
+	}
+}
+_ = m; _ = n`
 }
 
 func indentAsBlock(s, prefix string) string {
